@@ -1,0 +1,47 @@
+---
+import Logo from './Logo.astro';
+import Icon from './Icon.astro';
+import { SITE } from '../config/site';
+import { url } from '../lib/url';
+import { waLink } from '../lib/contact';
+import { getCategories } from '../lib/db';
+const pro = getCategories('profesional');
+const hogar = getCategories('hogar');
+const year = new Date().getFullYear();
+---
+<footer class="mt-24 bg-ink text-slate-300">
+  <div class="container-x grid gap-12 py-16 md:grid-cols-2 lg:grid-cols-[1.3fr_1fr_1fr_1.1fr]">
+    <div class="max-w-sm">
+      <div class="flex items-center gap-4"><Logo variant="badge" size={84} /><Logo inverse class="hidden sm:inline-flex [&_img]:hidden" /></div>
+      <p class="mt-5 text-sm leading-relaxed text-slate-400">{SITE.description}</p>
+    </div>
+    <div>
+      <h3 class="text-sm font-semibold text-white">Línea profesional</h3>
+      <ul class="mt-4 space-y-2.5 text-sm">
+        {pro.slice(0, 8).map((c) => <li><a class="transition hover:text-white" href={url(`/catalogo/?c=${c.slug}`)}>{c.name}</a></li>)}
+      </ul>
+    </div>
+    <div>
+      <h3 class="text-sm font-semibold text-white">Más categorías</h3>
+      <ul class="mt-4 space-y-2.5 text-sm">
+        {pro.slice(8).map((c) => <li><a class="transition hover:text-white" href={url(`/catalogo/?c=${c.slug}`)}>{c.name}</a></li>)}
+        <li><a class="transition hover:text-white" href={url('/catalogo/?linea=hogar')}>Línea hogar ({hogar.reduce((a, c) => a + c.count, 0)})</a></li>
+      </ul>
+    </div>
+    <div>
+      <h3 class="text-sm font-semibold text-white">Contacto</h3>
+      <ul class="mt-4 space-y-3 text-sm">
+        <li><a class="inline-flex items-center gap-2.5 transition hover:text-white" href={waLink(`Hola ${SITE.name}, quisiera información.`)} target="_blank" rel="noopener noreferrer"><Icon name="whatsapp" size={18} /> {SITE.whatsappLabel}</a></li>
+        <li><a class="inline-flex items-center gap-2.5 transition hover:text-white" href={`mailto:${SITE.email}`}><Icon name="mail" size={18} /> {SITE.email}</a></li>
+        <li class="inline-flex items-center gap-2.5"><Icon name="pin" size={18} /> {SITE.city}</li>
+        {SITE.hours && <li class="flex items-start gap-2.5"><Icon name="clock" size={18} class="mt-0.5 shrink-0" /> {SITE.hours}</li>}
+      </ul>
+    </div>
+  </div>
+  <div class="border-t border-white/10">
+    <div class="container-x flex flex-col gap-2 py-6 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between">
+      <p>© {year} {SITE.legalName}. Todos los derechos reservados.</p>
+      <p>Kärcher es una marca registrada de su respectivo titular. Imágenes de referencia.</p>
+    </div>
+  </div>
+</footer>

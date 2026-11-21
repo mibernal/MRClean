@@ -1,0 +1,226 @@
+---
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+import ProductCard from '../components/ProductCard.astro';
+import { getCategories, getFeatured, getProducts } from '../lib/db';
+import { url, img } from '../lib/url';
+import { waLink } from '../lib/contact';
+import { SITE } from '../config/site';
+
+const products = getProducts();
+const pro = getCategories('profesional');
+const hogar = getCategories('hogar');
+const featured = getFeatured();
+const withSpecs = products.filter((p) => p.specs.length > 0).length;
+const coverOf = (slug: string) => products.find((p) => p.category.slug === slug && p.image)?.image ?? null;
+
+const jsonld = {
+  '@context': 'https://schema.org',
+  '@type': 'Store',
+  name: SITE.name,
+  description: SITE.description,
+  email: SITE.email,
+  telephone: `+${SITE.whatsapp}`,
+  url: Astro.site?.href,
+  areaServed: 'CO',
+};
+---
+<Base jsonld={jsonld}>
+  <!-- HERO -->
+  <section class="relative overflow-hidden">
+    <div class="absolute inset-0 -z-10 bg-[radial-gradient(60%_60%_at_85%_10%,var(--color-brand-soft),transparent_70%)]"></div>
+    <div class="container-x grid items-center gap-12 pb-16 pt-10 lg:grid-cols-[1.05fr_1fr] lg:pb-24 lg:pt-16">
+      <div>
+        <p class="eyebrow">Equipos Kärcher para empresas y hogares</p>
+        <h1 class="mt-6 text-4xl font-extrabold leading-[1.05] text-ink sm:text-5xl lg:text-[3.6rem]">
+          Limpieza profesional con el <span class="relative whitespace-nowrap text-ink">equipo correcto<svg class="absolute -bottom-2 left-0 w-full text-accent" viewBox="0 0 300 12" preserveAspectRatio="none" aria-hidden="true"><path d="M2 9c60-6 140-8 296-3" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"/></svg></span>.
+        </h1>
+        <p class="mt-6 max-w-xl text-lg leading-relaxed text-mute">
+          Hidrolavadoras, aspiradoras, fregadoras, barredoras y detergentes. Revise las fichas técnicas, arme su lista y reciba su cotización por WhatsApp o correo.
+        </p>
+        <div class="mt-8 flex flex-wrap gap-3">
+          <a href={url('/catalogo/')} class="btn-primary">Ver catálogo <Icon name="arrow" size={18} /></a>
+          <a href={waLink(`Hola ${SITE.name}, necesito asesoría para elegir un equipo.`)} target="_blank" rel="noopener noreferrer" class="btn-ghost"><Icon name="whatsapp" size={18} class="text-wa" /> Hablar con un asesor</a>
+        </div>
+        <dl class="mt-10 grid max-w-lg grid-cols-3 gap-6 border-t border-line pt-6">
+          <div><dt class="text-xs text-mute">Productos</dt><dd class="font-display text-2xl font-extrabold">{products.length}</dd></div>
+          <div><dt class="text-xs text-mute">Fichas técnicas</dt><dd class="font-display text-2xl font-extrabold">{withSpecs}</dd></div>
+          <div><dt class="text-xs text-mute">Categorías</dt><dd class="font-display text-2xl font-extrabold">{pro.length + hogar.length}</dd></div>
+        </dl>
+      </div>
+      <div class="relative">
+        <div class="relative aspect-[5/4.3] overflow-hidden rounded-[2rem] shadow-2xl shadow-ink/20">
+          <img src={img('site/hero-wide.webp')} alt="Barredora industrial limpiando una vía" class="h-full w-full object-cover" fetchpriority="high" />
+          <div class="absolute inset-0 bg-gradient-to-t from-ink/50 via-transparent"></div>
+        </div>
+        <div class="absolute -bottom-6 -left-4 hidden w-64 rounded-2xl border border-line bg-white p-4 shadow-xl sm:block">
+          <div class="flex items-center gap-3">
+            <span class="grid size-10 place-items-center rounded-xl bg-wa/10 text-wa"><Icon name="whatsapp" size={22} /></span>
+            <div><p class="text-sm font-semibold">Cotización ágil</p><p class="text-xs text-mute">Precio y disponibilidad por WhatsApp</p></div>
+          </div>
+        </div>
+        <div class="absolute -right-3 top-6 hidden rounded-2xl bg-ink px-4 py-3 text-white shadow-xl sm:block">
+          <p class="text-xs text-slate-400">Línea profesional</p>
+          <p class="font-display text-lg font-bold">{pro.length} categorías</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CATEGORÍAS -->
+  <section class="container-x py-12" id="categorias">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+      <div>
+        <p class="eyebrow">Línea profesional</p>
+        <h2 class="mt-2 text-3xl font-extrabold sm:text-4xl">Encuentre su equipo por categoría</h2>
+      </div>
+      <a href={url('/catalogo/')} class="text-sm link">Ver todo el catálogo →</a>
+    </div>
+    <div class="mt-8 grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
+      {pro.map((c) => {
+        const cover = coverOf(c.slug);
+        return (
+          <a href={url(`/catalogo/?c=${c.slug}`)} class="reveal group relative flex flex-col overflow-hidden rounded-2xl border border-line bg-white p-4 transition hover:border-ink/15 hover:shadow-lg sm:p-5">
+            <div class="relative mb-4 aspect-[4/3] w-full">
+              {cover ? <img src={img(`productos/${cover}`)} alt="" loading="lazy" class="absolute inset-0 m-auto h-full w-full object-contain transition duration-500 group-hover:scale-105" />
+                     : <div class="grid h-full place-items-center rounded-xl bg-paper text-ink/35"><Icon name="box" size={36} /></div>}
+            </div>
+            <h3 class="font-display text-base font-bold leading-tight sm:text-lg">{c.name}</h3>
+            <p class="mt-1 text-xs text-mute sm:text-sm">{c.count} {c.count === 1 ? 'producto' : 'productos'}</p>
+            <span class="absolute right-4 top-4 grid size-8 place-items-center rounded-full bg-paper text-ink-2 opacity-0 transition group-hover:opacity-100"><Icon name="arrow" size={16} /></span>
+          </a>
+        );
+      })}
+    </div>
+  </section>
+
+  <!-- DESTACADOS -->
+  <section class="bg-paper py-16 mt-8">
+    <div class="container-x">
+      <div class="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p class="eyebrow">Destacados</p>
+          <h2 class="mt-2 text-3xl font-extrabold sm:text-4xl">Equipos más consultados</h2>
+        </div>
+        <a href={url('/catalogo/')} class="text-sm link">Ver más equipos →</a>
+      </div>
+      <div class="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {featured.map((p) => <ProductCard p={p} />)}
+      </div>
+    </div>
+  </section>
+
+  <!-- CÓMO COTIZAR -->
+  <section class="container-x py-20" id="como-cotizar">
+    <div class="mx-auto max-w-2xl text-center">
+      <p class="eyebrow">Cómo cotizar</p>
+      <h2 class="mt-2 text-3xl font-extrabold sm:text-4xl">Su cotización en tres pasos</h2>
+      <p class="mt-4 text-mute">Los precios se confirman directamente con un asesor, según configuración, cantidades y disponibilidad.</p>
+    </div>
+    <ol class="mt-12 grid gap-5 md:grid-cols-3">
+      {[
+        { i: 'search', t: 'Explore el catálogo', d: 'Filtre por categoría o busque por nombre o referencia. Cada producto tiene su ficha técnica.' },
+        { i: 'clipboard', t: 'Arme su lista', d: 'Toque “Cotizar” en los equipos que le interesan y ajuste las cantidades en “Mi cotización”.' },
+        { i: 'whatsapp', t: 'Envíela por WhatsApp o correo', d: 'Con un clic nos llega su lista completa. Le respondemos con precio y disponibilidad.' },
+      ].map((s, n) => (
+        <li class="reveal relative rounded-3xl border border-line bg-white p-7">
+          <span class="absolute right-6 top-5 font-display text-5xl font-extrabold text-paper">{n + 1}</span>
+          <span class:list={['grid size-12 place-items-center rounded-2xl', s.i === 'whatsapp' ? 'bg-wa/10 text-wa' : 'bg-brand-soft text-ink']}>
+            <Icon name={s.i as 'search'} size={24} />
+          </span>
+          <h3 class="mt-5 text-lg font-bold">{s.t}</h3>
+          <p class="mt-2 text-sm leading-relaxed text-mute">{s.d}</p>
+        </li>
+      ))}
+    </ol>
+    <div class="mt-10 text-center"><a href={url('/cotizacion/')} class="btn-dark"><Icon name="clipboard" size={18} /> Ir a mi cotización</a></div>
+  </section>
+
+  <!-- HOGAR -->
+  <section class="container-x">
+    <div class="reveal relative overflow-hidden rounded-[2rem] bg-ink">
+      <img src={img('site/hogar.webp')} alt="" loading="lazy" class="absolute inset-0 h-full w-full object-cover object-[70%_30%] opacity-70" />
+      <div class="absolute inset-0 bg-gradient-to-r from-ink via-ink/80 to-transparent"></div>
+      <div class="relative max-w-xl p-8 sm:p-12 lg:p-16">
+        <p class="eyebrow !text-white">Línea hogar</p>
+        <h2 class="mt-3 text-3xl font-extrabold text-white sm:text-4xl">También para su casa</h2>
+        <p class="mt-4 text-slate-300">Hidrolavadoras, aspiradoras, robots, limpiadoras a vapor y todos los accesorios: lanzas, espumadores, filtros y bolsas.</p>
+        <div class="mt-6 flex flex-wrap gap-2">
+          {hogar.map((c) => <a href={url(`/catalogo/?c=${c.slug}`)} class="rounded-full border border-white/20 bg-white/10 px-3.5 py-1.5 text-sm text-white backdrop-blur transition hover:bg-white/20">{c.name.replace(' para el hogar', '')}</a>)}
+        </div>
+        <a href={url('/catalogo/?linea=hogar')} class="btn mt-8 bg-accent text-ink hover:brightness-95">Ver línea hogar <Icon name="arrow" size={18} /></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- POR QUÉ -->
+  <section class="container-x py-20">
+    <div class="grid gap-5 md:grid-cols-3">
+      {[
+        { i: 'chat', t: 'Asesoría para elegir', d: 'Le ayudamos a escoger el equipo según superficie, tipo de suciedad, frecuencia de uso y alimentación eléctrica.' },
+        { i: 'doc', t: 'Información técnica clara', d: 'Presión, caudal, consumo, capacidad y referencia de cada equipo antes de cotizar.' },
+        { i: 'box', t: 'Equipos, detergentes y accesorios', d: 'Todo en un solo lugar: desde una aspiradora para la oficina hasta una barredora industrial.' },
+      ].map((f) => (
+        <div class="reveal rounded-3xl bg-paper p-7">
+          <Icon name={f.i as 'chat'} size={26} class="text-ink" />
+          <h3 class="mt-4 text-lg font-bold">{f.t}</h3>
+          <p class="mt-2 text-sm leading-relaxed text-mute">{f.d}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <!-- CONTACTO -->
+  <section class="container-x" id="contacto">
+    <div class="grid overflow-hidden rounded-[2rem] border border-line lg:grid-cols-2">
+      <div class="relative overflow-hidden bg-ink p-8 text-white sm:p-12">
+        <p class="eyebrow !text-white">Contacto</p>
+        <h2 class="mt-3 text-3xl font-extrabold sm:text-4xl">¿Listo para cotizar?</h2>
+        <p class="mt-4 max-w-md text-white/85">Escríbanos y un asesor le responde con precio, disponibilidad y tiempos de entrega.</p>
+        <div class="mt-8 space-y-3">
+          <a href={waLink(`Hola ${SITE.name}, quisiera una cotización.`)} target="_blank" rel="noopener noreferrer" class="flex items-center gap-4 rounded-2xl bg-white/10 p-4 transition hover:bg-white/15">
+            <span class="grid size-11 place-items-center rounded-xl bg-wa"><Icon name="whatsapp" size={22} /></span>
+            <span><span class="block text-xs text-white/70">WhatsApp</span><span class="font-semibold">{SITE.whatsappLabel}</span></span>
+          </a>
+          <a href={`mailto:${SITE.email}`} class="flex items-center gap-4 rounded-2xl bg-white/10 p-4 transition hover:bg-white/15">
+            <span class="grid size-11 place-items-center rounded-xl bg-white text-ink"><Icon name="mail" size={22} /></span>
+            <span><span class="block text-xs text-white/70">Correo</span><span class="font-semibold">{SITE.email}</span></span>
+          </a>
+        </div>
+      </div>
+      <form id="contact-form" class="grid gap-4 bg-white p-8 sm:grid-cols-2 sm:p-12">
+        <h3 class="text-xl font-bold sm:col-span-2">Envíenos un mensaje</h3>
+        <label class="grid gap-1.5 text-sm font-medium">Nombre<input name="nombre" required autocomplete="name" class="rounded-xl border border-line px-4 py-3 font-normal outline-none transition focus:border-ink focus:ring-4 focus:ring-brand/40" /></label>
+        <label class="grid gap-1.5 text-sm font-medium"><span>Empresa <span class="text-xs font-normal text-mute">(opcional)</span></span><input name="empresa" autocomplete="organization" class="rounded-xl border border-line px-4 py-3 font-normal outline-none transition focus:border-ink focus:ring-4 focus:ring-brand/40" /></label>
+        <label class="grid gap-1.5 text-sm font-medium sm:col-span-2">Ciudad<input name="ciudad" autocomplete="address-level2" class="rounded-xl border border-line px-4 py-3 font-normal outline-none transition focus:border-ink focus:ring-4 focus:ring-brand/40" /></label>
+        <label class="grid gap-1.5 text-sm font-medium sm:col-span-2">¿Qué necesita limpiar o qué equipo busca?<textarea name="mensaje" rows="4" required class="rounded-xl border border-line px-4 py-3 font-normal outline-none transition focus:border-ink focus:ring-4 focus:ring-brand/40"></textarea></label>
+        <div class="flex flex-wrap gap-3 sm:col-span-2">
+          <button type="submit" name="via" value="wa" class="btn-wa"><Icon name="whatsapp" size={18} /> Enviar por WhatsApp</button>
+          <button type="submit" name="via" value="mail" class="btn-ghost"><Icon name="mail" size={18} /> Enviar por correo</button>
+        </div>
+      </form>
+    </div>
+  </section>
+</Base>
+
+<script>
+  import { SITE } from '../config/site';
+  const form = document.getElementById('contact-form') as HTMLFormElement | null;
+  form?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const via = (e.submitter as HTMLButtonElement | null)?.value ?? 'wa';
+    const d = new FormData(form);
+    const get = (k: string) => String(d.get(k) ?? '').trim();
+    const lines = [
+      `Hola ${SITE.name}, mi nombre es ${get('nombre')}${get('empresa') ? ` (${get('empresa')})` : ''}${get('ciudad') ? `, de ${get('ciudad')}` : ''}.`,
+      '',
+      get('mensaje'),
+    ];
+    const text = lines.join('\n');
+    if (via === 'mail') {
+      window.location.href = `mailto:${SITE.email}?subject=${encodeURIComponent('Solicitud de información – ' + get('nombre'))}&body=${encodeURIComponent(text)}`;
+    } else {
+      window.open(`https://wa.me/${SITE.whatsapp}?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
+    }
+  });
+</script>

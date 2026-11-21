@@ -1,0 +1,116 @@
+---
+import Base from '../../layouts/Base.astro';
+import Icon from '../../components/Icon.astro';
+import ProductCard from '../../components/ProductCard.astro';
+import { getCategories, getProducts } from '../../lib/db';
+
+const products = getProducts();
+const cats = getCategories();
+---
+<Base title="Catálogo" description="Catálogo completo de equipos de limpieza Kärcher: hidrolavadoras, aspiradoras, fregadoras, barredoras, lavatapetes, vapor y detergentes. Cotice por WhatsApp o correo.">
+  <section class="border-b border-line bg-paper">
+    <div class="container-x py-10 sm:py-14">
+      <p class="eyebrow">Catálogo</p>
+      <div class="mt-2 flex flex-wrap items-end justify-between gap-6">
+        <div>
+          <h1 class="text-3xl font-extrabold sm:text-5xl">Todos los equipos</h1>
+          <p class="mt-3 max-w-xl text-mute">Busque por nombre, referencia o categoría. Agregue productos a su cotización y envíela por WhatsApp o correo.</p>
+        </div>
+        <label class="relative w-full max-w-md">
+          <span class="sr-only">Buscar</span>
+          <Icon name="search" class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-mute" />
+          <input id="q" type="search" placeholder="Ej.: HD 585, NT 30, 1.428-717.0, batería…" autocomplete="off"
+            class="w-full rounded-full border border-line bg-white py-3.5 pl-12 pr-4 text-[15px] shadow-sm outline-none transition focus:border-ink focus:ring-4 focus:ring-brand/40" />
+        </label>
+      </div>
+    </div>
+  </section>
+
+  <div class="sticky top-16 z-30 border-b border-line bg-white/90 backdrop-blur-lg lg:top-[72px]">
+    <div class="container-x flex items-center gap-3 py-3">
+      <div class="flex shrink-0 rounded-full bg-paper p-1" role="group" aria-label="Línea">
+        <button type="button" class="rounded-full px-4 py-1.5 text-sm font-semibold text-ink-2 transition aria-pressed:bg-white aria-pressed:text-ink aria-pressed:shadow-sm" data-line-btn="" aria-pressed="true">Todo</button>
+        <button type="button" class="rounded-full px-4 py-1.5 text-sm font-semibold text-ink-2 transition aria-pressed:bg-white aria-pressed:text-ink aria-pressed:shadow-sm" data-line-btn="profesional" aria-pressed="false">Profesional</button>
+        <button type="button" class="rounded-full px-4 py-1.5 text-sm font-semibold text-ink-2 transition aria-pressed:bg-white aria-pressed:text-ink aria-pressed:shadow-sm" data-line-btn="hogar" aria-pressed="false">Hogar</button>
+      </div>
+      <div class="-my-1 flex gap-2 overflow-x-auto py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" id="chips">
+        {cats.map((c) => (
+          <button type="button" class="chip" data-cat-btn={c.slug} data-line={c.line} aria-pressed="false">
+            {c.name}<span class="text-xs opacity-60">{c.count}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  </div>
+
+  <section class="container-x py-8">
+    <div class="mb-5 flex items-center justify-between gap-4">
+      <p class="text-sm text-mute"><span id="count" class="font-semibold text-ink">{products.length}</span> productos</p>
+      <button type="button" id="reset" class="hidden text-sm link">Limpiar filtros</button>
+    </div>
+    <div id="grid" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      {products.map((p, i) => <ProductCard p={p} eager={i < 4} />)}
+    </div>
+    <div id="empty" class="hidden rounded-3xl border border-dashed border-line py-20 text-center">
+      <p class="text-lg font-semibold">No encontramos productos con ese criterio</p>
+      <p class="mt-2 text-sm text-mute">Pruebe con otra palabra o escríbanos: le ayudamos a encontrar el equipo.</p>
+    </div>
+  </section>
+</Base>
+
+<script>
+  const $ = <T extends Element>(s: string) => document.querySelector<T>(s);
+  const q = $<HTMLInputElement>('#q')!;
+  const cards = [...document.querySelectorAll<HTMLElement>('[data-product]')];
+  const lineBtns = [...document.querySelectorAll<HTMLButtonElement>('[data-line-btn]')];
+  const catBtns = [...document.querySelectorAll<HTMLButtonElement>('[data-cat-btn]')];
+  const count = $('#count')!, empty = $('#empty')!, reset = $('#reset')!;
+
+  const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+  const params = new URLSearchParams(location.search);
+  const state = { line: params.get('linea') ?? '', cat: params.get('c') ?? '', q: params.get('q') ?? '' };
+  if (state.cat) {
+    const b = catBtns.find((x) => x.dataset.catBtn === state.cat);
+    if (b) state.line = b.dataset.line ?? '';
+  }
+  q.value = state.q;
+
+  function apply() {
+    const terms = norm(state.q).split(/\s+/).filter(Boolean);
+    let n = 0;
+    for (const c of cards) {
+      const hay = norm(c.dataset.search ?? '');
+      const ok = (!state.line || c.dataset.line === state.line)
+        && (!state.cat || c.dataset.cat === state.cat)
+        && terms.every((t) => hay.includes(t));
+      c.hidden = !ok;
+      if (ok) n++;
+    }
+    count.textContent = String(n);
+    empty.classList.toggle('hidden', n > 0);
+    reset.classList.toggle('hidden', !(state.line || state.cat || state.q));
+    lineBtns.forEach((b) => b.setAttribute('aria-pressed', String((b.dataset.lineBtn ?? '') === state.line)));
+    catBtns.forEach((b) => {
+      b.setAttribute('aria-pressed', String(b.dataset.catBtn === state.cat));
+      b.hidden = !!state.line && b.dataset.line !== state.line;
+    });
+    const u = new URLSearchParams();
+    if (state.line) u.set('linea', state.line);
+    if (state.cat) u.set('c', state.cat);
+    if (state.q) u.set('q', state.q);
+    history.replaceState(null, '', `${location.pathname}${u.size ? `?${u}` : ''}`);
+  }
+
+  lineBtns.forEach((b) => b.addEventListener('click', () => { state.line = b.dataset.lineBtn ?? ''; state.cat = ''; apply(); }));
+  catBtns.forEach((b) => b.addEventListener('click', () => {
+    state.cat = state.cat === b.dataset.catBtn ? '' : (b.dataset.catBtn ?? '');
+    if (state.cat) state.line = b.dataset.line ?? state.line;
+    apply();
+    window.scrollTo({ top: Math.min(window.scrollY, ($('#grid') as HTMLElement).offsetTop - 140), behavior: 'smooth' });
+  }));
+  let t = 0;
+  q.addEventListener('input', () => { window.clearTimeout(t); t = window.setTimeout(() => { state.q = q.value; apply(); }, 120); });
+  reset.addEventListener('click', () => { state.line = ''; state.cat = ''; state.q = ''; q.value = ''; apply(); });
+  apply();
+  catBtns.find((b) => b.dataset.catBtn === state.cat)?.scrollIntoView({ inline: 'center', block: 'nearest' });
+</script>

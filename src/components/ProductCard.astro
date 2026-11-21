@@ -1,0 +1,51 @@
+---
+import Icon from './Icon.astro';
+import type { Product } from '../lib/db';
+import { url, img } from '../lib/url';
+
+interface Props { p: Product; eager?: boolean }
+const { p, eager = false } = Astro.props;
+const href = url(`/producto/${p.slug}/`);
+const search = [p.name, p.ref, p.note, p.badge, p.category.name, ...p.variants.map((v) => `${v.name} ${v.ref}`)]
+  .filter(Boolean).join(' ').toLowerCase();
+---
+<article
+  class="group relative flex flex-col overflow-hidden rounded-2xl border border-line bg-white transition duration-300 hover:-translate-y-0.5 hover:border-ink/15 hover:shadow-[0_18px_40px_-24px_rgba(11,18,32,.35)]"
+  data-product data-line={p.category.line} data-cat={p.category.slug} data-search={search}
+>
+  <a href={href} class="relative block aspect-[4/3.4] overflow-hidden bg-white" tabindex="-1" aria-hidden="true">
+    {p.image ? (
+      <img src={img(`productos/${p.image}`)} alt="" loading={eager ? 'eager' : 'lazy'} decoding="async"
+        class="absolute inset-0 m-auto h-[82%] w-[82%] object-contain transition duration-500 group-hover:scale-[1.04]" />
+    ) : (
+      <div class="absolute inset-3 grid place-items-center rounded-xl bg-gradient-to-br from-paper to-brand-soft">
+        <div class="flex flex-col items-center gap-2 text-ink/35">
+          <Icon name="box" size={34} />
+          <span class="text-[11px] font-semibold uppercase tracking-[0.12em] text-mute">Foto próximamente</span>
+        </div>
+      </div>
+    )}
+    <div class="absolute left-3 top-3 flex flex-wrap gap-1.5">
+      {p.badge && <span class="badge">{p.badge}</span>}
+      {p.availability === 'bajo_pedido' && <span class="inline-flex items-center rounded-md border border-line bg-white/90 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-ink-2">Bajo pedido</span>}
+    </div>
+  </a>
+  <div class="flex flex-1 flex-col border-t border-line/70 p-4">
+    <p class="text-[11px] font-semibold uppercase tracking-[0.12em] text-mute">{p.category.name}</p>
+    <h3 class="mt-1 font-display text-[1.05rem] font-bold leading-snug text-ink">
+      <a href={href} class="after:absolute after:inset-0 after:content-['']">{p.name}</a>
+    </h3>
+    {p.note && <p class="mt-0.5 text-sm text-mute">{p.note}</p>}
+    <div class="mt-auto flex items-end justify-between gap-3 pt-4">
+      <span class="text-xs text-mute">Ref. <span class="font-medium tabular-nums text-ink-2">{p.ref}</span></span>
+      <button type="button"
+        class="relative z-10 inline-flex items-center gap-1.5 rounded-full border border-line bg-white px-3 py-1.5 text-xs font-semibold text-ink-2 transition hover:border-ink hover:text-ink data-[added=true]:border-brand data-[added=true]:bg-brand data-[added=true]:text-ink"
+        data-quote-add data-slug={p.slug} data-name={p.name} data-ref={p.ref} data-image={p.image ?? ''}
+        data-label-add="Cotizar" data-label-added="Agregado"
+        aria-label={`Agregar ${p.name} a la cotización`}
+      >
+        <Icon name="plus" size={14} /><span data-label>Cotizar</span>
+      </button>
+    </div>
+  </div>
+</article>

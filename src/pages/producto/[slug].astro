@@ -1,0 +1,169 @@
+---
+import Base from '../../layouts/Base.astro';
+import Icon from '../../components/Icon.astro';
+import ProductCard from '../../components/ProductCard.astro';
+import { getProducts, getRelated, type Product } from '../../lib/db';
+import { url, img } from '../../lib/url';
+import { waLink, mailLink, productQuoteText } from '../../lib/contact';
+import { SITE } from '../../config/site';
+
+export function getStaticPaths() {
+  return getProducts().map((p) => ({ params: { slug: p.slug }, props: { p } }));
+}
+interface Props { p: Product }
+const { p } = Astro.props;
+const related = getRelated(p, 4);
+const quoteText = productQuoteText(p.name, p.ref);
+const kindLabel = p.kind === 'quimico' ? 'detergente' : p.kind === 'accesorio' ? 'accesorio' : 'equipo';
+const description = `${p.name} (Ref. ${p.ref}) · ${p.category.name}. ${p.specs.slice(0, 3).map((s) => `${s.label}: ${s.value}`).join(' · ')}. Cotice por WhatsApp o correo con ${SITE.name}.`;
+const jsonld = {
+  '@context': 'https://schema.org',
+  '@type': 'Product',
+  name: p.name,
+  sku: p.ref,
+  mpn: p.ref,
+  brand: { '@type': 'Brand', name: 'Kärcher' },
+  category: p.category.name,
+  ...(p.image ? { image: new URL(img(`productos/${p.image}`), Astro.site).href } : {}),
+  additionalProperty: p.specs.map((s) => ({ '@type': 'PropertyValue', name: s.label, value: s.value })),
+};
+---
+<Base title={p.name} description={description} image={p.image ? img(`productos/${p.image}`) : undefined} jsonld={jsonld} floatingWa={false}>
+  <div class="container-x pt-6">
+    <nav class="flex flex-wrap items-center gap-1.5 text-sm text-mute" aria-label="Ruta">
+      <a href={url('/')} class="hover:text-ink">Inicio</a><span>/</span>
+      <a href={url('/catalogo/')} class="hover:text-ink">Catálogo</a><span>/</span>
+      <a href={url(`/catalogo/?c=${p.category.slug}`)} class="hover:text-ink">{p.category.name}</a><span>/</span>
+      <span class="text-ink">{p.name}</span>
+    </nav>
+  </div>
+
+  <section class="container-x grid gap-10 py-8 lg:grid-cols-[1.1fr_1fr] lg:gap-14 lg:py-12">
+    <!-- Imagen -->
+    <div class="lg:sticky lg:top-28 lg:self-start">
+      <div class="relative aspect-square overflow-hidden rounded-[2rem] border border-line bg-[radial-gradient(circle_at_50%_40%,#fff_0%,var(--color-paper)_75%)]">
+        {p.image ? (
+          <img src={img(`productos/${p.image}`)} alt={p.name} class="absolute inset-0 m-auto h-[80%] w-[80%] object-contain mix-blend-multiply" fetchpriority="high" />
+        ) : (
+          <div class="absolute inset-0 grid place-items-center text-ink/35">
+            <div class="flex flex-col items-center gap-3"><Icon name="box" size={56} /><span class="text-xs font-semibold uppercase tracking-[0.14em] text-mute">Foto próximamente</span></div>
+          </div>
+        )}
+        <div class="absolute left-5 top-5 flex flex-wrap gap-2">
+          {p.badge && <span class="badge !text-xs">{p.badge}</span>}
+          {p.availability === 'bajo_pedido' && <span class="rounded-md border border-line bg-white px-2 py-0.5 text-xs font-semibold uppercase tracking-wide">Bajo pedido</span>}
+        </div>
+      </div>
+      <p class="mt-3 text-center text-xs text-mute">Imagen de referencia</p>
+    </div>
+
+    <!-- Información -->
+    <div>
+      <p class="eyebrow">{p.category.name}</p>
+      <h1 class="mt-2 text-3xl font-extrabold leading-tight sm:text-[2.6rem]">{p.name}</h1>
+      {p.note && <p class="mt-2 text-lg text-mute">{p.note}</p>}
+      <p class="mt-4 inline-flex items-center gap-2 rounded-full bg-paper px-3.5 py-1.5 text-sm">
+        <span class="text-mute">Referencia</span><span class="font-semibold tabular-nums">{p.ref}</span>
+      </p>
+
+      <div class="mt-7 rounded-3xl border border-line bg-white p-5 sm:p-6">
+        <div class="flex items-start gap-3">
+          <span class="grid size-10 shrink-0 place-items-center rounded-xl bg-accent/25 text-ink"><Icon name="chat" size={20} /></span>
+          <div>
+            <p class="font-semibold">Precio a consultar</p>
+            <p class="text-sm text-mute">
+              {p.availability === 'bajo_pedido'
+                ? 'Este equipo se trae bajo pedido. Le confirmamos precio, disponibilidad y tiempo de entrega.'
+                : `Le enviamos el precio y la disponibilidad de este ${kindLabel} por WhatsApp o correo.`}
+            </p>
+          </div>
+        </div>
+        <div class="mt-5 grid gap-2.5 sm:grid-cols-2">
+          <a href={waLink(quoteText)} target="_blank" rel="noopener noreferrer" class="btn-wa w-full"><Icon name="whatsapp" size={18} /> Cotizar por WhatsApp</a>
+          <a href={mailLink(`Cotización ${p.name} – Ref. ${p.ref}`, quoteText)} class="btn-ghost w-full"><Icon name="mail" size={18} /> Cotizar por correo</a>
+          <button type="button" class="btn-dark w-full sm:col-span-2 data-[added=true]:bg-brand data-[added=true]:text-ink"
+            data-quote-add data-slug={p.slug} data-name={p.name} data-ref={p.ref} data-image={p.image ?? ''}
+            data-label-add="Agregar a mi cotización" data-label-added="En mi cotización · agregar otra unidad">
+            <Icon name="clipboard" size={18} /><span data-label>Agregar a mi cotización</span>
+          </button>
+        </div>
+      </div>
+
+      {p.specs.length > 0 && (
+        <div class="mt-8">
+          <h2 class="flex items-center gap-2 text-lg font-bold"><Icon name="doc" size={20} class="text-ink" /> {p.kind === 'quimico' ? 'Características' : 'Ficha técnica'}</h2>
+          <dl class="mt-3 overflow-hidden rounded-2xl border border-line">
+            {p.specs.map((s, i) => (
+              <div class:list={['grid grid-cols-[1fr_auto] gap-4 px-4 py-3 text-sm sm:px-5', i % 2 ? 'bg-white' : 'bg-paper/70']}>
+                <dt class="text-mute">{s.label}</dt>
+                <dd class="max-w-[16rem] text-right font-semibold tabular-nums">{s.value}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      )}
+
+      {p.presentations.length > 0 && (
+        <div class="mt-8">
+          <h2 class="text-lg font-bold">Presentaciones</h2>
+          <div class="mt-3 grid gap-2 sm:grid-cols-2">
+            {p.presentations.map((x) => (
+              <div class="flex items-center justify-between rounded-2xl border border-line px-4 py-3 text-sm">
+                <span class="font-semibold">{x.label}</span><span class="tabular-nums text-mute">Ref. {x.ref}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {p.variants.length > 0 && (
+        <div class="mt-8">
+          <h2 class="text-lg font-bold">También disponible</h2>
+          <div class="mt-3 space-y-2">
+            {p.variants.map((v) => (
+              <div class="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-line px-4 py-3 text-sm">
+                <span class="font-semibold">{v.name}</span><span class="tabular-nums text-mute">Ref. {v.ref}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {p.specs.length === 0 && (
+        <div class="mt-8 rounded-2xl bg-paper p-5 text-sm text-mute">
+          Solicite la ficha técnica completa de este producto a su asesor por WhatsApp o correo.
+        </div>
+      )}
+
+      <ul class="mt-8 grid gap-3 text-sm sm:grid-cols-2">
+        <li class="flex items-center gap-2.5"><Icon name="shield" size={18} class="text-ink" /> Asesoría para elegir el equipo adecuado</li>
+        <li class="flex items-center gap-2.5"><Icon name="box" size={18} class="text-ink" /> Detergentes y accesorios compatibles</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- Barra fija de acción en móvil -->
+  <div class="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-white/95 p-3 backdrop-blur-lg pb-[max(.75rem,env(safe-area-inset-bottom))] lg:hidden">
+    <div class="flex gap-2">
+      <a href={waLink(quoteText)} target="_blank" rel="noopener noreferrer" class="btn-wa flex-1"><Icon name="whatsapp" size={18} /> Cotizar</a>
+      <button type="button" class="btn-dark flex-1 data-[added=true]:bg-brand data-[added=true]:text-ink"
+        data-quote-add data-slug={p.slug} data-name={p.name} data-ref={p.ref} data-image={p.image ?? ''}
+        data-label-add="Agregar a la lista" data-label-added="En la lista (+1)">
+        <Icon name="clipboard" size={18} /><span data-label>Agregar a la lista</span>
+      </button>
+    </div>
+  </div>
+  <div class="h-20 lg:hidden" aria-hidden="true"></div>
+
+  {related.length > 0 && (
+    <section class="container-x py-10">
+      <div class="flex items-end justify-between gap-4">
+        <h2 class="text-2xl font-extrabold">Más en {p.category.name}</h2>
+        <a href={url(`/catalogo/?c=${p.category.slug}`)} class="text-sm link">Ver categoría →</a>
+      </div>
+      <div class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {related.map((r) => <ProductCard p={r} />)}
+      </div>
+    </section>
+  )}
+</Base>

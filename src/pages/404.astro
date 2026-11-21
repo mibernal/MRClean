@@ -1,0 +1,12 @@
+---
+import Base from '../layouts/Base.astro';
+import { url } from '../lib/url';
+---
+<Base title="Página no encontrada">
+  <section class="container-x grid place-items-center py-28 text-center">
+    <p class="font-display text-7xl font-extrabold text-ink">404</p>
+    <h1 class="mt-4 text-3xl font-extrabold">No encontramos esta página</h1>
+    <p class="mt-3 text-mute">Puede que el producto haya cambiado de nombre. Búsquelo en el catálogo.</p>
+    <a href={url('/catalogo/')} class="btn-primary mt-8">Ir al catálogo</a>
+  </section>
+</Base>
