@@ -2,6 +2,7 @@
 import Base from '../../layouts/Base.astro';
 import Icon from '../../components/Icon.astro';
 import ProductCard from '../../components/ProductCard.astro';
+import Gallery from '../../components/Gallery.astro';
 import { getProducts, getRelated, type Product } from '../../lib/db';
 import { url, img } from '../../lib/url';
 import { waLink, mailLink, productQuoteText } from '../../lib/contact';
@@ -24,11 +25,11 @@ const jsonld = {
   mpn: p.ref,
   brand: { '@type': 'Brand', name: 'Kärcher' },
   category: p.category.name,
-  ...(p.image ? { image: new URL(img(`productos/${p.image}`), Astro.site).href } : {}),
+  ...(p.photos.length ? { image: p.photos.map((ph) => new URL(img(ph.src), Astro.site).href) } : {}),
   additionalProperty: p.specs.map((s) => ({ '@type': 'PropertyValue', name: s.label, value: s.value })),
 };
 ---
-<Base title={p.name} description={description} image={p.image ? img(`productos/${p.image}`) : undefined} jsonld={jsonld} floatingWa={false}>
+<Base title={p.name} description={description} image={p.photos[0] ? img(p.photos[0].src) : undefined} jsonld={jsonld} floatingWa={false}>
   <div class="container-x pt-6">
     <nav class="flex flex-wrap items-center gap-1.5 text-sm text-mute" aria-label="Ruta">
       <a href={url('/')} class="hover:text-ink">Inicio</a><span>/</span>
@@ -40,21 +41,9 @@ const jsonld = {
 
   <section class="container-x grid gap-10 py-8 lg:grid-cols-[1.1fr_1fr] lg:gap-14 lg:py-12">
     <!-- Imagen -->
-    <div class="lg:sticky lg:top-28 lg:self-start">
-      <div class="relative aspect-square overflow-hidden rounded-[2rem] border border-line bg-[radial-gradient(circle_at_50%_40%,#fff_0%,var(--color-paper)_75%)]">
-        {p.image ? (
-          <img src={img(`productos/${p.image}`)} alt={p.name} class="absolute inset-0 m-auto h-[80%] w-[80%] object-contain mix-blend-multiply" fetchpriority="high" />
-        ) : (
-          <div class="absolute inset-0 grid place-items-center text-ink/35">
-            <div class="flex flex-col items-center gap-3"><Icon name="box" size={56} /><span class="text-xs font-semibold uppercase tracking-[0.14em] text-mute">Foto próximamente</span></div>
-          </div>
-        )}
-        <div class="absolute left-5 top-5 flex flex-wrap gap-2">
-          {p.badge && <span class="badge !text-xs">{p.badge}</span>}
-          {p.availability === 'bajo_pedido' && <span class="rounded-md border border-line bg-white px-2 py-0.5 text-xs font-semibold uppercase tracking-wide">Bajo pedido</span>}
-        </div>
-      </div>
-      <p class="mt-3 text-center text-xs text-mute">Imagen de referencia</p>
+    <div class="min-w-0 lg:sticky lg:top-28 lg:self-start">
+      <Gallery photos={p.photos} name={p.name} badge={p.badge} onOrder={p.availability === 'bajo_pedido'} />
+      <p class="mt-3 text-center text-xs text-mute">Imágenes de referencia</p>
     </div>
 
     <!-- Información -->
@@ -82,7 +71,7 @@ const jsonld = {
           <a href={waLink(quoteText)} target="_blank" rel="noopener noreferrer" class="btn-wa w-full"><Icon name="whatsapp" size={18} /> Cotizar por WhatsApp</a>
           <a href={mailLink(`Cotización ${p.name} – Ref. ${p.ref}`, quoteText)} class="btn-ghost w-full"><Icon name="mail" size={18} /> Cotizar por correo</a>
           <button type="button" class="btn-dark w-full sm:col-span-2 data-[added=true]:bg-brand data-[added=true]:text-ink"
-            data-quote-add data-slug={p.slug} data-name={p.name} data-ref={p.ref} data-image={p.image ?? ''}
+            data-quote-add data-slug={p.slug} data-name={p.name} data-ref={p.ref} data-image={p.photos[0] ? p.photos[0].srcSm.replace('productos/', '') : ''}
             data-label-add="Agregar a mi cotización" data-label-added="En mi cotización · agregar otra unidad">
             <Icon name="clipboard" size={18} /><span data-label>Agregar a mi cotización</span>
           </button>
@@ -147,7 +136,7 @@ const jsonld = {
     <div class="flex gap-2">
       <a href={waLink(quoteText)} target="_blank" rel="noopener noreferrer" class="btn-wa flex-1"><Icon name="whatsapp" size={18} /> Cotizar</a>
       <button type="button" class="btn-dark flex-1 data-[added=true]:bg-brand data-[added=true]:text-ink"
-        data-quote-add data-slug={p.slug} data-name={p.name} data-ref={p.ref} data-image={p.image ?? ''}
+        data-quote-add data-slug={p.slug} data-name={p.name} data-ref={p.ref} data-image={p.photos[0] ? p.photos[0].srcSm.replace('productos/', '') : ''}
         data-label-add="Agregar a la lista" data-label-added="En la lista (+1)">
         <Icon name="clipboard" size={18} /><span data-label>Agregar a la lista</span>
       </button>

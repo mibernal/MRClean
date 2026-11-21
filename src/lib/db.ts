@@ -1,6 +1,7 @@
 // Acceso a la base SQLite (solo en tiempo de compilación: el sitio final es 100 % estático).
 import { DatabaseSync } from 'node:sqlite';
 import { resolve } from 'node:path';
+import { existsSync } from 'node:fs';
 
 export type Line = 'profesional' | 'hogar';
 
@@ -18,6 +19,8 @@ export interface Category {
 export interface Spec { label: string; value: string }
 export interface Variant { name: string; ref: string }
 export interface Presentation { label: string; ref: string }
+/** Foto lista para usar: rutas relativas a public/img/ */
+export interface Photo { src: string; srcSm: string; alt: string }
 
 export interface Product {
   id: number;
@@ -35,10 +38,13 @@ export interface Product {
   specs: Spec[];
   variants: Variant[];
   presentations: Presentation[];
+  /** Galería (la primera es la portada). Vacía si el producto no tiene fotos. */
+  photos: Photo[];
 }
 
 // Se resuelve desde la raíz del proyecto (donde se ejecuta `npm run build`).
 const DB_PATH = resolve(process.cwd(), 'db/catalogo.db');
+const IMG_DIR = resolve(process.cwd(), 'public/img/productos');
 
 let cache: { categories: Category[]; products: Product[] } | null = null;
 
@@ -68,6 +74,13 @@ function load() {
   const specs = group<Spec>('SELECT product_id, label, value FROM specs ORDER BY product_id, sort');
   const variants = group<Variant>('SELECT product_id, name, ref FROM variants ORDER BY product_id, sort');
   const pres = group<Presentation>('SELECT product_id, label, ref FROM presentations ORDER BY product_id, sort');
+  // Solo se usan las fotos que ya están descargadas en public/img/productos/
+  const gallery = group<{ file: string; alt: string | null }>('SELECT product_id, file, alt FROM images ORDER BY product_id, sort');
+  const toPhoto = (file: string, alt: string): Photo | null => {
+    if (!existsSync(resolve(IMG_DIR, file))) return null;
+    const sm = file.replace(/\.webp$/, '-sm.webp');
+    return { src: `productos/${file}`, srcSm: existsSync(resolve(IMG_DIR, sm)) ? `productos/${sm}` : `productos/${file}`, alt };
+  };
 
   type Row = Omit<Product, 'featured' | 'category' | 'specs' | 'variants' | 'presentations'> & { featured: number; category_id: number };
   const rows = db
@@ -89,6 +102,12 @@ function load() {
       specs: specs.get(r.id) ?? [],
       variants: variants.get(r.id) ?? [],
       presentations: pres.get(r.id) ?? [],
+      photos: (() => {
+        const list = (gallery.get(r.id) ?? []).map((g) => toPhoto(g.file, g.alt ?? r.name)).filter((x): x is Photo => x !== null);
+        // Respaldo: foto tomada del catálogo PDF
+        if (!list.length && r.image) { const legacy = toPhoto(r.image, r.name); if (legacy) list.push(legacy); }
+        return list;
+      })(),
     };
   });
 

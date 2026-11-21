@@ -7,7 +7,7 @@ const dir = new URL('../db/', import.meta.url);
 const db = new DatabaseSync(fileURLToPath(new URL('catalogo.db', dir)), { readOnly: true });
 
 const lit = (v) => (v === null || v === undefined ? 'NULL' : typeof v === 'number' || typeof v === 'bigint' ? String(v) : `'${String(v).replaceAll("'", "''")}'`);
-const tables = ['categories', 'products', 'specs', 'variants', 'presentations'];
+const tables = ['categories', 'products', 'specs', 'variants', 'presentations', 'images'];
 const out = ['-- Exportado desde db/catalogo.db', 'BEGIN;'];
 for (const t of tables) {
   const rows = db.prepare(`SELECT * FROM ${t} ORDER BY rowid`).all();

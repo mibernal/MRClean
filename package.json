@@ -11,7 +11,8 @@
     "build": "astro check && NODE_NO_WARNINGS=1 astro build",
     "preview": "astro preview",
     "db:build": "node --no-warnings scripts/db-build.mjs",
-    "db:export": "node --no-warnings scripts/db-export.mjs"
+    "db:export": "node --no-warnings scripts/db-export.mjs",
+    "images:sync": "node --no-warnings scripts/images-sync.mjs"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.6",
@@ -24,6 +25,7 @@
   "devDependencies": {
     "@astrojs/check": "^0.9.12",
     "@types/node": "^22.20.5",
+    "sharp": "^0.35.5",
     "typescript": "^6.0.3"
   }
 }

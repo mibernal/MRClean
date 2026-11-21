@@ -5,7 +5,7 @@ const KEY = 'mrclean:cotizacion:v1';
 const EVT = 'quote:change';
 
 const SLUG = /^[a-z0-9-]{1,120}$/;
-const IMG = /^[a-z0-9-]{1,120}\.(webp|jpg|png)$/;
+const IMG = /^(k\/)?[a-z0-9-]{1,120}\.(webp|jpg|png)$/;
 const MAX_ITEMS = 100;
 
 /** Acepta solo datos con la forma esperada (localStorage puede haber sido alterado). */

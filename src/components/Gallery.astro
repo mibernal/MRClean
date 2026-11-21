@@ -1,0 +1,134 @@
+---
+// Galería de producto: deslizable (scroll-snap) con miniaturas, flechas y vista ampliada.
+import Icon from './Icon.astro';
+import type { Photo } from '../lib/db';
+import { img } from '../lib/url';
+
+interface Props { photos: Photo[]; name: string; badge?: string | null; onOrder?: boolean }
+const { photos, name, badge, onOrder } = Astro.props;
+const many = photos.length > 1;
+---
+<div class="gallery" data-gallery data-srcs={JSON.stringify(photos.map((p) => ({ src: img(p.src), alt: p.alt })))}>
+  <div class="relative overflow-hidden rounded-[2rem] border border-line bg-white">
+    {photos.length ? (
+      <div class="flex aspect-square snap-x snap-mandatory overflow-x-auto scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" data-track tabindex="0" aria-label={`Fotos de ${name}`}>
+        {photos.map((ph, i) => (
+          <button type="button" class="relative h-full w-full shrink-0 snap-center cursor-zoom-in" data-zoom={i} aria-label={`Ampliar foto ${i + 1} de ${photos.length}`}>
+            <img
+              src={img(ph.src)}
+              srcset={`${img(ph.srcSm)} 600w, ${img(ph.src)} 1200w`}
+              sizes="(min-width: 1024px) 45vw, 100vw"
+              alt={ph.alt}
+              width="1200" height="1200"
+              loading={i === 0 ? 'eager' : 'lazy'}
+              fetchpriority={i === 0 ? 'high' : 'auto'}
+              decoding="async"
+              class="absolute inset-0 m-auto h-[88%] w-[88%] object-contain"
+            />
+          </button>
+        ))}
+      </div>
+    ) : (
+      <div class="grid aspect-square place-items-center bg-paper text-ink/35">
+        <div class="flex flex-col items-center gap-3"><Icon name="box" size={56} /><span class="text-xs font-semibold uppercase tracking-[0.14em] text-mute">Foto próximamente</span></div>
+      </div>
+    )}
+
+    <div class="pointer-events-none absolute left-4 top-4 flex flex-wrap gap-2">
+      {badge && <span class="badge !text-xs">{badge}</span>}
+      {onOrder && <span class="rounded-md border border-line bg-white px-2 py-0.5 text-xs font-semibold uppercase tracking-wide">Bajo pedido</span>}
+    </div>
+
+    {many && (
+      <>
+        <button type="button" data-prev class="absolute left-3 top-1/2 grid size-11 -translate-y-1/2 place-items-center rounded-full bg-white/95 text-ink shadow-md ring-1 ring-line transition hover:bg-brand disabled:opacity-0" aria-label="Foto anterior"><Icon name="chevronLeft" /></button>
+        <button type="button" data-next class="absolute right-3 top-1/2 grid size-11 -translate-y-1/2 place-items-center rounded-full bg-white/95 text-ink shadow-md ring-1 ring-line transition hover:bg-brand disabled:opacity-0" aria-label="Foto siguiente"><Icon name="chevronRight" /></button>
+        <span class="pointer-events-none absolute bottom-4 right-4 rounded-full bg-ink/85 px-2.5 py-1 text-xs font-semibold tabular-nums text-white" data-counter>1 / {photos.length}</span>
+      </>
+    )}
+    {photos.length > 0 && (
+      <span class="pointer-events-none absolute bottom-4 left-4 hidden items-center gap-1.5 rounded-full bg-white/90 px-2.5 py-1 text-xs font-medium text-ink-2 ring-1 ring-line sm:inline-flex"><Icon name="expand" size={14} /> Clic para ampliar</span>
+    )}
+  </div>
+
+  {many && (
+    <div class="mt-3 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:thin]" role="tablist" aria-label="Miniaturas">
+      {photos.map((ph, i) => (
+        <button type="button" role="tab" data-thumb={i} aria-selected={i === 0 ? 'true' : 'false'} aria-label={`Ver foto ${i + 1}`}
+          class="relative size-16 shrink-0 overflow-hidden rounded-xl border-2 border-line bg-white transition hover:border-ink/40 aria-selected:border-ink sm:size-20">
+          <img src={img(ph.srcSm)} alt="" loading="lazy" decoding="async" class="absolute inset-0 m-auto h-[85%] w-[85%] object-contain" />
+        </button>
+      ))}
+    </div>
+  )}
+
+  {photos.length > 0 && (
+    <dialog data-lightbox class="m-auto h-dvh max-h-none w-screen max-w-none bg-transparent p-0 backdrop:bg-ink/90">
+      <div class="relative grid h-full w-full place-items-center p-4 sm:p-10">
+        <img data-lightbox-img alt="" class="max-h-full max-w-full rounded-2xl bg-white object-contain p-4" />
+        <button type="button" data-close class="absolute right-4 top-4 grid size-11 place-items-center rounded-full bg-white text-ink shadow" aria-label="Cerrar"><Icon name="x" /></button>
+        {many && <button type="button" data-lb-prev class="absolute left-4 top-1/2 grid size-11 -translate-y-1/2 place-items-center rounded-full bg-white text-ink shadow" aria-label="Foto anterior"><Icon name="chevronLeft" /></button>}
+        {many && <button type="button" data-lb-next class="absolute right-4 top-1/2 grid size-11 -translate-y-1/2 place-items-center rounded-full bg-white text-ink shadow" aria-label="Foto siguiente"><Icon name="chevronRight" /></button>}
+      </div>
+    </dialog>
+  )}
+</div>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-gallery]').forEach((root) => {
+    const track = root.querySelector<HTMLElement>('[data-track]');
+    if (!track) return;
+    const slides = [...track.children] as HTMLElement[];
+    const thumbs = [...root.querySelectorAll<HTMLButtonElement>('[data-thumb]')];
+    const prev = root.querySelector<HTMLButtonElement>('[data-prev]');
+    const next = root.querySelector<HTMLButtonElement>('[data-next]');
+    const counter = root.querySelector<HTMLElement>('[data-counter]');
+    let srcs: { src: string; alt: string }[] = [];
+    try { srcs = JSON.parse(root.dataset.srcs ?? '[]'); } catch { srcs = []; }
+    let idx = 0;
+
+    const go = (i: number) => {
+      idx = Math.max(0, Math.min(slides.length - 1, i));
+      track.scrollTo({ left: idx * track.clientWidth, behavior: 'smooth' });
+    };
+    const paint = () => {
+      thumbs.forEach((t, i) => t.setAttribute('aria-selected', String(i === idx)));
+      thumbs[idx]?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+      if (counter) counter.textContent = `${idx + 1} / ${slides.length}`;
+      if (prev) prev.disabled = idx === 0;
+      if (next) next.disabled = idx === slides.length - 1;
+    };
+    let raf = 0;
+    track.addEventListener('scroll', () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => { idx = Math.round(track.scrollLeft / track.clientWidth); paint(); });
+    }, { passive: true });
+    thumbs.forEach((t, i) => t.addEventListener('click', () => go(i)));
+    prev?.addEventListener('click', () => go(idx - 1));
+    next?.addEventListener('click', () => go(idx + 1));
+    track.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight') { e.preventDefault(); go(idx + 1); }
+      if (e.key === 'ArrowLeft') { e.preventDefault(); go(idx - 1); }
+    });
+    paint();
+
+    // Vista ampliada
+    const dlg = root.querySelector<HTMLDialogElement>('[data-lightbox]');
+    const big = root.querySelector<HTMLImageElement>('[data-lightbox-img]');
+    if (!dlg || !big) return;
+    const show = (i: number) => {
+      const n = srcs.length; const k = ((i % n) + n) % n; idx = k;
+      big.src = srcs[k]?.src ?? ''; big.alt = srcs[k]?.alt ?? '';
+    };
+    slides.forEach((s, i) => s.addEventListener('click', () => { show(i); dlg.showModal(); }));
+    root.querySelector('[data-close]')?.addEventListener('click', () => dlg.close());
+    root.querySelector('[data-lb-prev]')?.addEventListener('click', () => show(idx - 1));
+    root.querySelector('[data-lb-next]')?.addEventListener('click', () => show(idx + 1));
+    dlg.addEventListener('click', (e) => { if (e.target === dlg || (e.target as HTMLElement).classList.contains('grid')) dlg.close(); });
+    dlg.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight') show(idx + 1);
+      if (e.key === 'ArrowLeft') show(idx - 1);
+    });
+    dlg.addEventListener('close', () => { go(idx); });
+  });
+</script>

@@ -51,3 +51,14 @@ CREATE TABLE IF NOT EXISTS presentations (
 
 CREATE INDEX IF NOT EXISTS idx_products_category ON products(category_id);
 CREATE INDEX IF NOT EXISTS idx_specs_product ON specs(product_id);
+
+-- Galería de fotos por producto. `url` = fuente original (se descarga y optimiza con `npm run images:sync`);
+-- `file` = ruta dentro de public/img/productos/ (se genera también la versión pequeña "-sm.webp").
+CREATE TABLE IF NOT EXISTS images (
+  product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  url        TEXT,
+  file       TEXT    NOT NULL,
+  alt        TEXT,
+  sort       INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_images_product ON images(product_id);

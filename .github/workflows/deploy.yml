@@ -7,16 +7,16 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # para guardar en el repo las fotos nuevas descargadas
     env:
       # Para dominio propio cambie a: SITE: https://www.sudominio.com  y  BASE: /
       SITE: https://${{ github.repository_owner }}.github.io
@@ -28,6 +28,22 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+
+      - name: Descargar y optimizar fotos nuevas
+        run: npm run images:sync
+
+      - name: Guardar fotos nuevas en el repositorio
+        run: |
+          if [ -n "$(git status --porcelain public/img/productos)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add public/img/productos
+            git commit -m "Fotos de productos sincronizadas [skip ci]"
+            git push
+          else
+            echo "Sin fotos nuevas"
+          fi
+
       - run: npm run build
       - uses: actions/upload-pages-artifact@v5
         with:
@@ -36,6 +52,9 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

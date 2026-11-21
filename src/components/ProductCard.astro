@@ -6,6 +6,7 @@ import { url, img } from '../lib/url';
 interface Props { p: Product; eager?: boolean }
 const { p, eager = false } = Astro.props;
 const href = url(`/producto/${p.slug}/`);
+const cover = p.photos[0];
 const search = [p.name, p.ref, p.note, p.badge, p.category.name, ...p.variants.map((v) => `${v.name} ${v.ref}`)]
   .filter(Boolean).join(' ').toLowerCase();
 ---
@@ -14,9 +15,9 @@ const search = [p.name, p.ref, p.note, p.badge, p.category.name, ...p.variants.m
   data-product data-line={p.category.line} data-cat={p.category.slug} data-search={search}
 >
   <a href={href} class="relative block aspect-[4/3.4] overflow-hidden bg-white" tabindex="-1" aria-hidden="true">
-    {p.image ? (
-      <img src={img(`productos/${p.image}`)} alt="" loading={eager ? 'eager' : 'lazy'} decoding="async"
-        class="absolute inset-0 m-auto h-[82%] w-[82%] object-contain transition duration-500 group-hover:scale-[1.04]" />
+    {cover ? (
+      <img src={img(cover.srcSm)} alt="" loading={eager ? 'eager' : 'lazy'} decoding="async" width="600" height="600"
+        class="absolute inset-0 m-auto h-[84%] w-[84%] object-contain transition duration-500 group-hover:scale-[1.04]" />
     ) : (
       <div class="absolute inset-3 grid place-items-center rounded-xl bg-gradient-to-br from-paper to-brand-soft">
         <div class="flex flex-col items-center gap-2 text-ink/35">
@@ -24,6 +25,11 @@ const search = [p.name, p.ref, p.note, p.badge, p.category.name, ...p.variants.m
           <span class="text-[11px] font-semibold uppercase tracking-[0.12em] text-mute">Foto próximamente</span>
         </div>
       </div>
+    )}
+    {p.photos.length > 1 && (
+      <span class="absolute bottom-3 right-3 inline-flex items-center gap-1 rounded-full bg-white/90 px-2 py-0.5 text-[11px] font-semibold text-ink-2 ring-1 ring-line">
+        <Icon name="image" size={12} /> {p.photos.length}
+      </span>
     )}
     <div class="absolute left-3 top-3 flex flex-wrap gap-1.5">
       {p.badge && <span class="badge">{p.badge}</span>}
@@ -40,7 +46,7 @@ const search = [p.name, p.ref, p.note, p.badge, p.category.name, ...p.variants.m
       <span class="text-xs text-mute">Ref. <span class="font-medium tabular-nums text-ink-2">{p.ref}</span></span>
       <button type="button"
         class="relative z-10 inline-flex items-center gap-1.5 rounded-full border border-line bg-white px-3 py-1.5 text-xs font-semibold text-ink-2 transition hover:border-ink hover:text-ink data-[added=true]:border-brand data-[added=true]:bg-brand data-[added=true]:text-ink"
-        data-quote-add data-slug={p.slug} data-name={p.name} data-ref={p.ref} data-image={p.image ?? ''}
+        data-quote-add data-slug={p.slug} data-name={p.name} data-ref={p.ref} data-image={cover ? cover.srcSm.replace('productos/', '') : ''}
         data-label-add="Cotizar" data-label-added="Agregado"
         aria-label={`Agregar ${p.name} a la cotización`}
       >

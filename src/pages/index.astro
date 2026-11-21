@@ -12,7 +12,7 @@ const pro = getCategories('profesional');
 const hogar = getCategories('hogar');
 const featured = getFeatured();
 const withSpecs = products.filter((p) => p.specs.length > 0).length;
-const coverOf = (slug: string) => products.find((p) => p.category.slug === slug && p.image)?.image ?? null;
+const coverOf = (slug: string) => products.find((p) => p.category.slug === slug && p.photos.length)?.photos[0]?.srcSm ?? null;
 
 const jsonld = {
   '@context': 'https://schema.org',
@@ -82,7 +82,7 @@ const jsonld = {
         return (
           <a href={url(`/catalogo/?c=${c.slug}`)} class="reveal group relative flex flex-col overflow-hidden rounded-2xl border border-line bg-white p-4 transition hover:border-ink/15 hover:shadow-lg sm:p-5">
             <div class="relative mb-4 aspect-[4/3] w-full">
-              {cover ? <img src={img(`productos/${cover}`)} alt="" loading="lazy" class="absolute inset-0 m-auto h-full w-full object-contain transition duration-500 group-hover:scale-105" />
+              {cover ? <img src={img(cover)} alt="" loading="lazy" class="absolute inset-0 m-auto h-full w-full object-contain transition duration-500 group-hover:scale-105" />
                      : <div class="grid h-full place-items-center rounded-xl bg-paper text-ink/35"><Icon name="box" size={36} /></div>}
             </div>
             <h3 class="font-display text-base font-bold leading-tight sm:text-lg">{c.name}</h3>
