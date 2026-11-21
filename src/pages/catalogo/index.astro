@@ -36,7 +36,7 @@ const cats = getCategories();
       <div class="-my-1 flex gap-2 overflow-x-auto py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" id="chips">
         {cats.map((c) => (
           <button type="button" class="chip" data-cat-btn={c.slug} data-line={c.line} aria-pressed="false">
-            {c.name}<span class="text-xs opacity-60">{c.count}</span>
+            {c.name}<span class="text-xs opacity-80">{c.count}</span>
           </button>
         ))}
       </div>
@@ -48,6 +48,7 @@ const cats = getCategories();
       <p class="text-sm text-mute"><span id="count" class="font-semibold text-ink">{products.length}</span> productos</p>
       <button type="button" id="reset" class="hidden text-sm link">Limpiar filtros</button>
     </div>
+    <h2 class="sr-only">Productos</h2>
     <div id="grid" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {products.map((p, i) => <ProductCard p={p} eager={i < 4} />)}
     </div>
@@ -75,7 +76,7 @@ const cats = getCategories();
   }
   q.value = state.q;
 
-  function apply() {
+  function apply(syncUrl = true) {
     const terms = norm(state.q).split(/\s+/).filter(Boolean);
     let n = 0;
     for (const c of cards) {
@@ -98,7 +99,8 @@ const cats = getCategories();
     if (state.line) u.set('linea', state.line);
     if (state.cat) u.set('c', state.cat);
     if (state.q) u.set('q', state.q);
-    history.replaceState(null, '', `${location.pathname}${u.size ? `?${u}` : ''}`);
+    // En la carga inicial la URL ya es correcta: no tocar el historial (interrumpiría la transición de página)
+    if (syncUrl) history.replaceState(null, '', `${location.pathname}${u.size ? `?${u}` : ''}`);
   }
 
   lineBtns.forEach((b) => b.addEventListener('click', () => { state.line = b.dataset.lineBtn ?? ''; state.cat = ''; apply(); }));
@@ -111,6 +113,6 @@ const cats = getCategories();
   let t = 0;
   q.addEventListener('input', () => { window.clearTimeout(t); t = window.setTimeout(() => { state.q = q.value; apply(); }, 120); });
   reset.addEventListener('click', () => { state.line = ''; state.cat = ''; state.q = ''; q.value = ''; apply(); });
-  apply();
+  apply(false);
   catBtns.find((b) => b.dataset.catBtn === state.cat)?.scrollIntoView({ inline: 'center', block: 'nearest' });
 </script>

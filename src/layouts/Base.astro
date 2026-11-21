@@ -3,6 +3,7 @@ import '../styles/global.css';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import Icon from '../components/Icon.astro';
+import SearchDialog from '../components/SearchDialog.astro';
 import { SITE } from '../config/site';
 import { img, url } from '../lib/url';
 import { waLink } from '../lib/contact';
@@ -47,6 +48,7 @@ const ogImage = new URL(image, Astro.site).href;
     <link rel="canonical" href={canonical} />
     <link rel="icon" href={img('site/favicon.png')} type="image/png" />
     <link rel="apple-touch-icon" href={img('site/apple-touch-icon.png')} />
+    <link rel="manifest" href={url('/manifest.webmanifest')} />
     <meta name="theme-color" content="#111214" />
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="es_CO" />
@@ -61,8 +63,18 @@ const ogImage = new URL(image, Astro.site).href;
   <body class="flex min-h-dvh flex-col">
     <a href="#main" class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-white focus:px-4 focus:py-2">Saltar al contenido</a>
     <Header />
+    <!-- Encabezado solo para impresión (ficha técnica en papel o PDF) -->
+    <div class="hidden items-center justify-between border-b-2 border-ink pb-3 print:flex">
+      <img src={img('site/logo-176.webp')} alt={SITE.legalName} width="64" height="64" class="size-16 rounded-full" />
+      <div class="text-right text-xs leading-relaxed">
+        <p class="text-sm font-bold">{SITE.legalName}</p>
+        <p>WhatsApp {SITE.whatsappLabel} · {SITE.email}</p>
+        <p>Precio y disponibilidad: consulte a su asesor</p>
+      </div>
+    </div>
     <main id="main" class="flex-1"><slot /></main>
     <Footer />
+    <SearchDialog />
 
     {floatingWa && <a
       href={waLink(`Hola ${SITE.name}, quisiera información sobre sus equipos.`)}

@@ -14,7 +14,7 @@ const nav = [
 ---
 <header class="sticky top-0 z-40 border-b border-line/80 bg-white/85 backdrop-blur-lg supports-[backdrop-filter]:bg-white/70">
   <div class="container-x flex h-16 items-center justify-between gap-4 lg:h-[72px]">
-    <a href={url('/')} aria-label={`${SITE.name} — inicio`}><Logo /></a>
+    <a href={url('/')} class="shrink-0"><Logo /></a>
 
     <nav class="hidden items-center gap-1 lg:flex" aria-label="Principal">
       {nav.map((n) => (
@@ -23,9 +23,12 @@ const nav = [
     </nav>
 
     <div class="flex items-center gap-2">
-      <a href={url('/catalogo/')} class="hidden size-10 place-items-center rounded-full text-ink-2 transition hover:bg-paper sm:grid" aria-label="Buscar en el catálogo">
+      <button type="button" data-search-open class="hidden items-center gap-2 rounded-full border border-line bg-paper py-2 pl-3 pr-2 text-sm text-mute transition hover:border-ink/30 xl:inline-flex">
+        <Icon name="search" size={18} /> Buscar equipo… <kbd data-kbd class="rounded-md border border-line bg-white px-1.5 text-[11px]">Ctrl K</kbd>
+      </button>
+      <button type="button" data-search-open class="grid size-10 place-items-center rounded-full text-ink-2 transition hover:bg-paper xl:hidden" aria-label="Buscar">
         <Icon name="search" />
-      </a>
+      </button>
       <a href={url('/cotizacion/')} class="relative grid size-10 place-items-center rounded-full text-ink-2 transition hover:bg-paper" aria-label="Ver mi cotización">
         <Icon name="clipboard" />
         <span data-quote-count hidden class="absolute -right-0.5 -top-0.5 grid min-w-5 place-items-center rounded-full bg-accent px-1 text-[11px] font-bold leading-5 text-ink">0</span>
@@ -62,6 +65,9 @@ const nav = [
     const open = btn.getAttribute('aria-expanded') === 'true';
     btn.setAttribute('aria-expanded', String(!open));
     menu?.classList.toggle('hidden', open);
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && btn?.getAttribute('aria-expanded') === 'true') { menu?.classList.add('hidden'); btn.setAttribute('aria-expanded', 'false'); btn.focus(); }
   });
   menu?.addEventListener('click', (e) => {
     if ((e.target as HTMLElement).closest('a')) { menu.classList.add('hidden'); btn?.setAttribute('aria-expanded', 'false'); }

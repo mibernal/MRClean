@@ -18,13 +18,13 @@ const year = new Date().getFullYear();
     <div>
       <h3 class="text-sm font-semibold text-white">Línea profesional</h3>
       <ul class="mt-4 space-y-2.5 text-sm">
-        {pro.slice(0, 8).map((c) => <li><a class="transition hover:text-white" href={url(`/catalogo/?c=${c.slug}`)}>{c.name}</a></li>)}
+        {pro.slice(0, 8).map((c) => <li><a class="transition hover:text-white" href={url(`/categoria/${c.slug}/`)}>{c.name}</a></li>)}
       </ul>
     </div>
     <div>
       <h3 class="text-sm font-semibold text-white">Más categorías</h3>
       <ul class="mt-4 space-y-2.5 text-sm">
-        {pro.slice(8).map((c) => <li><a class="transition hover:text-white" href={url(`/catalogo/?c=${c.slug}`)}>{c.name}</a></li>)}
+        {pro.slice(8).map((c) => <li><a class="transition hover:text-white" href={url(`/categoria/${c.slug}/`)}>{c.name}</a></li>)}
         <li><a class="transition hover:text-white" href={url('/catalogo/?linea=hogar')}>Línea hogar ({hogar.reduce((a, c) => a + c.count, 0)})</a></li>
       </ul>
     </div>
@@ -39,7 +39,7 @@ const year = new Date().getFullYear();
     </div>
   </div>
   <div class="border-t border-white/10">
-    <div class="container-x flex flex-col gap-2 py-6 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between">
+    <div class="container-x flex flex-col gap-2 py-6 text-xs text-slate-400 sm:flex-row sm:items-center sm:justify-between">
       <p>© {year} {SITE.legalName}. Todos los derechos reservados.</p>
       <p>Kärcher es una marca registrada de su respectivo titular. Imágenes de referencia.</p>
     </div>

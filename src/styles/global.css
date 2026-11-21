@@ -9,7 +9,7 @@
 
   --color-ink: #111214;
   --color-ink-2: #2a2c31;
-  --color-mute: #64748b;
+  --color-mute: #526072;
   --color-line: #e5e9f0;
   --color-paper: #f6f8fb;
 
@@ -17,7 +17,7 @@
   --color-brand-dark: #e8d100;
   --color-brand-soft: #fff9cc;
   --color-accent: #fce400;
-  --color-wa: #1fa855;         /* WhatsApp */
+  --color-wa: #0f7a3b;         /* WhatsApp (oscurecido para contraste AA) */
 }
 
 @layer base {
@@ -34,7 +34,7 @@
 @utility btn-wa { @apply btn bg-wa text-white shadow-sm hover:brightness-95; }
 @utility btn-ghost { @apply btn border border-line bg-white text-ink hover:border-ink/30 hover:bg-paper; }
 @utility btn-dark { @apply btn bg-ink text-white hover:bg-ink-2; }
-@utility chip { @apply inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-line bg-white px-3.5 py-1.5 text-sm font-medium text-ink-2 transition hover:border-ink/40 hover:text-ink aria-pressed:border-ink aria-pressed:bg-ink aria-pressed:text-white; }
+@utility chip { @apply inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-line bg-white px-3.5 py-1.5 text-sm font-medium text-ink-2 transition hover:border-ink/40 hover:text-ink aria-pressed:border-ink aria-pressed:bg-ink aria-pressed:text-white aria-[current=page]:border-ink aria-[current=page]:bg-ink aria-[current=page]:text-white; }
 @utility eyebrow { @apply inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-ink-2 before:h-3 before:w-1.5 before:-skew-x-12 before:bg-brand before:content-['']; }
 @utility link { @apply font-semibold text-ink underline decoration-brand decoration-[3px] underline-offset-4 transition hover:decoration-ink; }
 @utility badge { @apply inline-flex items-center rounded-md bg-ink px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-brand; }
@@ -43,4 +43,21 @@
 @media (prefers-reduced-motion: no-preference) {
   .reveal { opacity: 0; transform: translateY(14px); transition: opacity .6s ease, transform .6s ease; }
   .reveal.is-in { opacity: 1; transform: none; }
+}
+
+/* Transiciones suaves entre páginas (Chrome, Edge, Safari 18+; el resto navega normal) */
+@view-transition { navigation: auto; }
+@media (prefers-reduced-motion: reduce) {
+  @view-transition { navigation: none; }
+  html { scroll-behavior: auto; }
+}
+
+/* Ficha técnica imprimible / PDF */
+@media print {
+  @page { margin: 14mm; }
+  header, footer, .no-print, [data-thumb], [data-prev], [data-next], [data-counter] { display: none !important; }
+  body { background: #fff !important; }
+  main { padding: 0 !important; }
+  .print-break-avoid { break-inside: avoid; }
+  a[href]::after { content: none !important; }
 }

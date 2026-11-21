@@ -9,15 +9,16 @@ interface Props { variant?: 'bar' | 'badge'; inverse?: boolean; class?: string; 
 const { variant = 'bar', inverse = false, class: cls = '', size = 96 } = Astro.props;
 ---
 {variant === 'badge' ? (
-  <img src={img('site/logo.webp')} alt={SITE.legalName} width={size} height={size} class:list={['rounded-full', cls]} loading="lazy" />
+  <img src={img('site/logo-176.webp')} srcset={`${img('site/logo-176.webp')} 176w, ${img('site/logo.webp')} 512w`} sizes={`${size}px`} alt={SITE.legalName} width={size} height={size} class:list={['rounded-full', cls]} loading="lazy" decoding="async" />
 ) : (
   <span class:list={['inline-flex items-center gap-2.5', cls]}>
-    <img src={img('site/mark.png')} alt="" width="44" height="42" class="h-10 w-auto lg:h-11" />
+    <span class="sr-only">{SITE.legalName}</span>
+    <img src={img('site/mark-48.webp')} srcset={`${img('site/mark-48.webp')} 1x, ${img('site/mark-96.webp')} 2x`} alt="" width="47" height="44" class="h-10 w-auto lg:h-11" />
     <span class="flex flex-col leading-none">
-      <span class:list={['font-display text-[1.35rem] font-extrabold tracking-tight', inverse ? 'text-white' : 'text-ink']}>
+      <span aria-hidden="true" class:list={['font-display text-[1.35rem] font-extrabold tracking-tight', inverse ? 'text-white' : 'text-ink']}>
         M.R<span class="mx-[3px] inline-block h-[0.55em] w-[0.22em] -translate-y-[0.05em] bg-brand align-middle"></span>CLEAN
       </span>
-      <span class="mt-1 w-fit -skew-x-12 bg-brand px-2 py-[2px] text-[9px] font-extrabold uppercase tracking-[0.42em] text-ink"><span class="inline-block skew-x-12">Servicios</span></span>
+      <span aria-hidden="true" class="mt-1 w-fit -skew-x-12 bg-brand px-2 py-[2px] text-[9px] font-extrabold uppercase tracking-[0.42em] text-ink"><span class="inline-block skew-x-12">Servicios</span></span>
     </span>
   </span>
 )}

@@ -48,9 +48,8 @@ const search = [p.name, p.ref, p.note, p.badge, p.category.name, ...p.variants.m
         class="relative z-10 inline-flex items-center gap-1.5 rounded-full border border-line bg-white px-3 py-1.5 text-xs font-semibold text-ink-2 transition hover:border-ink hover:text-ink data-[added=true]:border-brand data-[added=true]:bg-brand data-[added=true]:text-ink"
         data-quote-add data-slug={p.slug} data-name={p.name} data-ref={p.ref} data-image={cover ? cover.srcSm.replace('productos/', '') : ''}
         data-label-add="Cotizar" data-label-added="Agregado"
-        aria-label={`Agregar ${p.name} a la cotización`}
       >
-        <Icon name="plus" size={14} /><span data-label>Cotizar</span>
+        <Icon name="plus" size={14} /><span data-label>Cotizar</span><span class="sr-only"> {p.name}</span>
       </button>
     </div>
   </div>

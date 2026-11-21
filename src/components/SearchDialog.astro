@@ -1,0 +1,122 @@
+---
+// Buscador global: se abre con el botón de lupa, con "/" o con Ctrl/⌘ + K.
+import Icon from './Icon.astro';
+---
+<dialog id="search-dialog" aria-label="Buscar productos"
+  class="m-0 mx-auto mt-[8vh] w-[min(42rem,calc(100vw-1.5rem))] max-w-none overflow-hidden rounded-3xl bg-white p-0 shadow-2xl backdrop:bg-ink/60 backdrop:backdrop-blur-sm">
+  <div class="flex items-center gap-3 border-b border-line px-5">
+    <Icon name="search" class="shrink-0 text-mute" />
+    <input id="search-input" type="search" autocomplete="off" spellcheck="false"
+      placeholder="Buscar por nombre, referencia o categoría…" aria-controls="search-results" aria-autocomplete="list"
+      class="h-16 w-full bg-transparent text-base outline-none placeholder:text-mute" />
+    <kbd class="hidden rounded-md border border-line px-1.5 py-0.5 text-[11px] text-mute sm:block">Esc</kbd>
+  </div>
+  <ul id="search-results" role="listbox" class="max-h-[60vh] overflow-y-auto p-2"></ul>
+  <p id="search-empty" class="hidden px-6 py-10 text-center text-sm text-mute">Sin resultados. Pruebe con otra palabra o escríbanos por WhatsApp.</p>
+  <p id="search-hint" class="px-6 pb-5 pt-2 text-xs text-mute">Sugerencias: <span class="text-ink-2">HD 585</span>, <span class="text-ink-2">batería</span>, <span class="text-ink-2">1.428-717.0</span>, <span class="text-ink-2">Puzzi</span></p>
+</dialog>
+
+<script>
+  type Item = { n: string; r: string; c: string; l: string; s: string; i: string | null; k: string };
+  const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
+  const dlg = document.getElementById('search-dialog') as HTMLDialogElement;
+  const input = document.getElementById('search-input') as HTMLInputElement;
+  const list = document.getElementById('search-results') as HTMLUListElement;
+  const empty = document.getElementById('search-empty') as HTMLElement;
+  const hint = document.getElementById('search-hint') as HTMLElement;
+  let data: Item[] | null = null;
+  let active = 0;
+
+  const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  async function load() {
+    if (data) return data;
+    try { data = (await (await fetch(`${BASE}/buscar.json`)).json()) as Item[]; } catch { data = []; }
+    return data;
+  }
+
+  function render(q: string) {
+    const terms = norm(q).split(/\s+/).filter(Boolean);
+    list.replaceChildren();
+    hint.classList.toggle('hidden', terms.length > 0);
+    if (!terms.length || !data) { empty.classList.add('hidden'); return; }
+    const scored = data
+      .map((it) => {
+        const name = norm(it.n), ref = norm(it.r), hay = `${name} ${ref} ${norm(it.c)} ${norm(it.k)}`;
+        const tokens = hay.split(/[^a-z0-9./-]+/).filter(Boolean);
+        // Cada término debe coincidir con el inicio de una palabra (o estar contenido si es largo)
+        const hit = (t: string) => tokens.some((w) => w.startsWith(t)) || (t.length >= 4 && hay.includes(t));
+        if (!terms.every(hit)) return null;
+        let score = 0;
+        for (const t of terms) { if (name.startsWith(t)) score += 3; else if (name.includes(t)) score += 2; if (ref.includes(t)) score += 2; }
+        return { it, score };
+      })
+      .filter((x): x is { it: Item; score: number } => x !== null)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 12);
+    empty.classList.toggle('hidden', scored.length > 0);
+    active = 0;
+    scored.forEach(({ it }, idx) => {
+      const li = document.createElement('li');
+      li.setAttribute('role', 'option');
+      li.id = `sr-${idx}`;
+      const a = document.createElement('a');
+      a.href = `${BASE}/producto/${it.s}/`;
+      a.className = 'flex items-center gap-4 rounded-2xl px-3 py-2.5 transition hover:bg-paper aria-selected:bg-paper';
+      const box = document.createElement('span');
+      box.className = 'grid size-14 shrink-0 place-items-center overflow-hidden rounded-xl border border-line bg-white';
+      if (it.i) { const im = document.createElement('img'); im.src = `${BASE}/img/${it.i}`; im.alt = ''; im.loading = 'lazy'; im.className = 'h-[85%] w-[85%] object-contain'; box.append(im); }
+      const txt = document.createElement('span');
+      txt.className = 'min-w-0 flex-1';
+      const n = document.createElement('span'); n.className = 'block truncate font-semibold text-ink'; n.textContent = it.n;
+      const m = document.createElement('span'); m.className = 'block truncate text-xs text-mute'; m.textContent = `${it.c} · Ref. ${it.r}`;
+      txt.append(n, m);
+      a.append(box, txt);
+      li.append(a);
+      list.append(li);
+    });
+    paint();
+  }
+  function paint() {
+    [...list.children].forEach((li, i) => {
+      const sel = i === active;
+      li.firstElementChild?.setAttribute('aria-selected', String(sel));
+      li.setAttribute('aria-selected', String(sel));
+      if (sel) { li.scrollIntoView({ block: 'nearest' }); input.setAttribute('aria-activedescendant', li.id); }
+    });
+  }
+
+  async function open() {
+    if (dlg.open) return;
+    dlg.showModal();
+    input.value = '';
+    render('');
+    input.focus();
+    await load();
+  }
+
+  document.addEventListener('click', (e) => {
+    if ((e.target as HTMLElement).closest('[data-search-open]')) { e.preventDefault(); void open(); }
+  });
+  document.addEventListener('keydown', (e) => {
+    const t = e.target as HTMLElement;
+    const typing = t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName);
+    if ((e.key === 'k' && (e.metaKey || e.ctrlKey)) || (e.key === '/' && !typing)) { e.preventDefault(); void open(); }
+  });
+  let timer = 0;
+  input.addEventListener('input', () => { window.clearTimeout(timer); timer = window.setTimeout(async () => { await load(); render(input.value); }, 80); });
+  input.addEventListener('keydown', (e) => {
+    const n = list.children.length;
+    if (e.key === 'ArrowDown' && n) { e.preventDefault(); active = (active + 1) % n; paint(); }
+    if (e.key === 'ArrowUp' && n) { e.preventDefault(); active = (active - 1 + n) % n; paint(); }
+    if (e.key === 'Enter') {
+      const a = list.children[active]?.querySelector('a');
+      if (a) { e.preventDefault(); dlg.close(); window.location.href = a.href; }
+      else if (input.value.trim()) { e.preventDefault(); dlg.close(); window.location.href = `${BASE}/catalogo/?q=${encodeURIComponent(input.value.trim())}`; }
+    }
+  });
+  dlg.addEventListener('click', (e) => {
+    if (e.target === dlg) dlg.close();
+    if ((e.target as HTMLElement).closest('a')) dlg.close();
+  });
+  if (/Mac|iPhone|iPad/.test(navigator.userAgent)) document.querySelectorAll('[data-kbd]').forEach((k) => { k.textContent = '⌘ K'; });
+</script>
