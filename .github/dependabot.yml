@@ -5,6 +5,12 @@ updates:
     schedule: { interval: monthly }
     groups:
       dependencias: { patterns: ['*'] }
+    ignore:
+      # @astrojs/check aún no soporta TypeScript 7; @types/node sigue la versión de Node usada (22)
+      - dependency-name: typescript
+        update-types: ['version-update:semver-major']
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
   - package-ecosystem: github-actions
     directory: /
     schedule: { interval: monthly }
