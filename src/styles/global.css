@@ -45,10 +45,7 @@
   .reveal.is-in { opacity: 1; transform: none; }
 }
 
-/* Transiciones suaves entre páginas (Chrome, Edge, Safari 18+; el resto navega normal) */
-@view-transition { navigation: auto; }
 @media (prefers-reduced-motion: reduce) {
-  @view-transition { navigation: none; }
   html { scroll-behavior: auto; }
 }
 
